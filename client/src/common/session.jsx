@@ -1,5 +1,5 @@
 const storeInSession = (key, value) => {
-  return sessionStorage.setItem(key, value);
+  sessionStorage.setItem(key, value);
 };
 
 const lookInSession = (key) => {
