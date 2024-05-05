@@ -1,13 +1,65 @@
 import { Link } from "react-router-dom";
+import { Toaster, toast } from "react-hot-toast";
+import axios from "axios";
 import InputBox from "../components/input.component";
 import googleIcon from "../imgs/google.png";
 import AnimationWrapper from "../common/page-animation";
+import { storeInSession } from "../common/session";
 
 const UserAuthForm = ({ type }) => {
+  const userAuthThroughServer = (serverRoute, formData) => {
+    const serverDomain = import.meta.env.VITE_SERVER_DOMAIN;
+
+    axios
+      .post(`${serverDomain + serverRoute}`, formData)
+      .then(({ data }) => {
+        storeInSession(JSON.stringify(data));
+        console.log(sessionStorage);
+      })
+      .catch(({ response }) => {
+        toast.error(response.data.error);
+      });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const serverRoute = type === "Sign In" ? "/signin" : "/signup";
+
+    const htmlForm = new FormData(formElement);
+    const formData = {};
+
+    for (const [key, value] of htmlForm.entries()) {
+      formData[key] = value;
+    }
+
+    const { fullname, email, password } = formData;
+
+    const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+    const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/;
+
+    if (fullname?.length < 3) {
+      return toast.error("Fullname must be at least 3 characters long");
+    }
+
+    if (!email.length || !emailRegex.test(email)) {
+      return toast.error("Invalid email address");
+    }
+
+    if (!passwordRegex.test(password)) {
+      return toast.error(
+        "The password must be 6-20 characters long and include at least one numeric, lowercase, and uppercase letter."
+      );
+    }
+
+    userAuthThroughServer(serverRoute, formData);
+  };
+
   return (
     <AnimationWrapper keyValue={type}>
       <section className="h-cover flex items-center justify-center">
-        <form className="w-[80%] max-w-[400px]">
+        <Toaster />
+        <form id="formElement" className="w-[80%] max-w-[400px]">
           <h1 className="text-4xl font-gelasio capitalize text-center mb-24">
             {type === "Sign In" ? "Welcome Back" : "Join Us Today!"}
           </h1>
@@ -37,7 +89,11 @@ const UserAuthForm = ({ type }) => {
             icon="fi-rr-key"
           />
 
-          <button type="submit" className="btn-dark center mt-14">
+          <button
+            type="submit"
+            onClick={handleSubmit}
+            className="btn-dark center mt-14"
+          >
             {type}
           </button>
 
