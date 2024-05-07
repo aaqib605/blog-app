@@ -42,7 +42,9 @@ app.post("/signup", async (req, res) => {
     const { fullname, email, password } = req.body;
 
     if (!fullname || !email || !password) {
-      return res.status(403).json({ error: "Please add all required fields" });
+      return res
+        .status(403)
+        .json({ error: "Please provide all required fields" });
     }
 
     // Hash the password
@@ -60,19 +62,13 @@ app.post("/signup", async (req, res) => {
       },
     });
 
-    user
-      .save()
-      .then((u) => {
-        return res.status(201).json(formatUserData(u));
-      })
-      .catch((err) => {
-        if (err.code === 11000) {
-          return res.status(400).json({ error: "User already exists" });
-        }
-
-        return res.status(500).json({ error: err.message });
-      });
+    const u = await user.save();
+    return res.status(201).json(formatUserData(u));
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ error: "User already exists" });
+    }
+
     return res.status(500).json({ error: error.message });
   }
 });

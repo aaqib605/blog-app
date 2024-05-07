@@ -14,19 +14,20 @@ const UserAuthForm = ({ type }) => {
     setUserAuth,
   } = useContext(UserContext);
 
-  const userAuthThroughServer = (serverRoute, formData) => {
-    const serverDomain = import.meta.env.VITE_SERVER_DOMAIN;
+  const userAuthThroughServer = async (serverRoute, formData) => {
+    try {
+      const serverDomain = import.meta.env.VITE_SERVER_DOMAIN;
 
-    axios
-      .post(`${serverDomain + serverRoute}`, formData)
-      .then(({ data }) => {
-        storeInSession("user", JSON.stringify(data));
+      const { data } = await axios.post(
+        `${serverDomain + serverRoute}`,
+        formData
+      );
 
-        setUserAuth(data);
-      })
-      .catch(({ response }) => {
-        toast.error(response.data.error);
-      });
+      storeInSession("user", JSON.stringify(data));
+      setUserAuth(data);
+    } catch (error) {
+      toast.error(error.response.data.error);
+    }
   };
 
   const handleSubmit = (e) => {
