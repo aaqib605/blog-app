@@ -7,6 +7,7 @@ import googleIcon from "../imgs/google.png";
 import AnimationWrapper from "../common/page-animation";
 import { storeInSession } from "../common/session";
 import { UserContext } from "../App";
+import { authWithGoogle } from "../common/firebase";
 
 const UserAuthForm = ({ type }) => {
   const {
@@ -64,6 +65,21 @@ const UserAuthForm = ({ type }) => {
     userAuthThroughServer(serverRoute, formData);
   };
 
+  const handleGoogleAuth = async (e) => {
+    try {
+      e.preventDefault();
+      const user = await authWithGoogle();
+
+      const serverRoute = "/google-auth";
+
+      let formData = { accessToken: user.accessToken };
+
+      userAuthThroughServer(serverRoute, formData);
+    } catch (error) {
+      toast.error(error);
+    }
+  };
+
   return jwtToken ? (
     <Navigate to="/" />
   ) : (
@@ -114,7 +130,10 @@ const UserAuthForm = ({ type }) => {
             <hr className="w-1/2 border-black" />
           </div>
 
-          <button className="btn-dark flex justify-center items-center gap-4 w-[90%] center">
+          <button
+            className="btn-dark flex justify-center items-center gap-4 w-[90%] center"
+            onClick={handleGoogleAuth}
+          >
             <img src={googleIcon} alt="Google Icon" className="w-5" />
             continue with google
           </button>
