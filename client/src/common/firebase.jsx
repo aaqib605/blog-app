@@ -6,8 +6,8 @@ const firebaseConfig = {
   authDomain: "blog-app-14cf6.firebaseapp.com",
   projectId: "blog-app-14cf6",
   storageBucket: "blog-app-14cf6.appspot.com",
-  messagingSenderId: "853886314427",
-  appId: "1:853886314427:web:807455654a306f6433869e",
+  messagingSenderId: `${import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID}`,
+  appId: `${import.meta.env.VITE_FIREBASE_APP_ID}`,
 };
 
 const app = initializeApp(firebaseConfig);

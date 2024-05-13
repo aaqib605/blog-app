@@ -8,7 +8,7 @@ import admin from "firebase-admin";
 import { getAuth } from "firebase-admin/auth";
 import User from "./schema/User.js";
 import connectDB from "./config/db.js";
-import serviceAccountKey from "./blog-app-14cf6-firebase-adminsdk-7nurl-daa6c39582.json" assert { type: "json" };
+import serviceAccountKey from "./blog-app-firebase-adminsdk.json" with { type: "json" };
 
 connectDB();
 
@@ -98,7 +98,7 @@ app.post("/signin", async (req, res) => {
     } else {
       return res.status(403).json({
         error:
-          "Account was created using Google Auth. Please continue with the same.",
+          "This email was used with Google Auth. Please continue with the same.",
       });
     }
   } catch (error) {
@@ -121,7 +121,7 @@ app.post("/google-auth", async (req, res) => {
       if (!user.googleAuth) {
         return res.status(403).json({
           error:
-            "Please log in using the email and password you used for signing up.",
+            "This email was used with a password for signing up. Please continue with the same.",
         });
       }
     } else {
@@ -142,7 +142,10 @@ app.post("/google-auth", async (req, res) => {
 
     return res.status(200).json(formatUserData(user));
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({
+      error:
+        "Failed to authenticate you with Google. Try again with another Google Account.",
+    });
   }
 });
 

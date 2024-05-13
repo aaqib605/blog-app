@@ -3,3 +3,4 @@ server/node_modules
 .DS_Store
 server/.env
 client/.env
+server/blog-app-firebase-adminsdk.json
