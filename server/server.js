@@ -147,6 +147,6 @@ app.post("/google-auth", async (req, res) => {
         "Failed to authenticate you with Google. Try again with another Google Account.",
     });
   }
-});
+}); 
 
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
