@@ -32,7 +32,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-const generateUploadURL = async () => {
+const generateImageURL = async () => {
   const date = new Date();
   const imgName = `${nanoid()}-${date.getTime()}.jpeg}`;
 
@@ -177,5 +177,15 @@ app.post("/google-auth", async (req, res) => {
     });
   }
 }); 
+
+app.get("/get-image-url", async (req, res) => {
+  try {
+    const imgURL = await generateImageURL();
+    res.status(200).json({imgURL});
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({error: error.message})
+  }
+})
 
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
