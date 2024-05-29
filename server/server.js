@@ -32,18 +32,18 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-const generateImageURL = async () => {
+const generateUploadImageURL = async () => {
   const date = new Date();
   const imgName = `${nanoid()}-${date.getTime()}.jpeg}`;
 
-  const imgURL = await s3.getSignedUrlPromise("putObject", {
+  const uploadImageURL = await s3.getSignedUrlPromise("putObject", {
     Bucket: "medium-blog-app",
     Key: imgName,
     Expires: 1000,
     ContentType: "image/jpeg",
   })
 
-  return imgURL;
+  return uploadImageURL;
 }
 
 const formatUserData = (user) => {
@@ -178,10 +178,10 @@ app.post("/google-auth", async (req, res) => {
   }
 }); 
 
-app.get("/get-image-url", async (req, res) => {
+app.get("/get-upload-image-url", async (req, res) => {
   try {
-    const imgURL = await generateImageURL();
-    res.status(200).json({imgURL});
+    const uploadImageURL = await generateUploadImageURL();
+    res.status(200).json({uploadImageURL});
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({error: error.message})
