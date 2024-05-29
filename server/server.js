@@ -6,15 +6,24 @@ import jwt from "jsonwebtoken";
 import cors from "cors";
 import admin from "firebase-admin";
 import { getAuth } from "firebase-admin/auth";
+import aws from "aws-sdk"
 import User from "./schema/User.js";
 import connectDB from "./config/db.js";
 import serviceAccountKey from "./blog-app-firebase-adminsdk.json" with { type: "json" };
 
 connectDB();
 
+// Firebase Google Authentication
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccountKey),
 });
+
+// AWS S3 Bucket
+const s3 = new aws.S3({
+  region: "eu-north-1",
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+})
 
 const PORT = process.env.PORT || 8000;
 const app = express();
@@ -23,8 +32,22 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+const generateUploadURL = async () => {
+  const date = new Date();
+  const imgName = `${nanoid()}-${date.getTime()}.jpeg}`;
+
+  const imgURL = await s3.getSignedUrlPromise("putObject", {
+    Bucket: "medium-blog-app",
+    Key: imgName,
+    Expires: 1000,
+    ContentType: "image/jpeg",
+  })
+
+  return imgURL;
+}
+
 const formatUserData = (user) => {
-  const accessToken = jwt.sign({ id: user._id }, process.env.SECRET_KEY);
+  const accessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
 
   return {
     jwtToken: accessToken,
@@ -43,6 +66,8 @@ const generateUsername = async (email) => {
 
   return username;
 };
+
+
 
 app.post("/signup", async (req, res) => {
   try {
@@ -85,6 +110,10 @@ app.post("/signin", async (req, res) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ "personalInfo.email": email });
+
+    if (!user) {
+      return res.status(400).json({error: "Invalid credentials"});
+    }
 
     if (!user.googleAuth) {
       if (
