@@ -1,6 +1,8 @@
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
+import EditorJS from "@editorjs/editorjs";
+import { tools } from "./tools.component";
 import logo from "../imgs/logo.png";
 import AnimationWrapper from "../common/page-animation";
 import defaultBanner from "../imgs/blog banner.png";
@@ -67,6 +69,15 @@ const BlogEditor = () => {
     img.src = `${defaultBanner}`;
   };
 
+  useEffect(() => {
+    let editor = new EditorJS({
+      holderId: "textEditor",
+      data: "",
+      tools,
+      placeholder: "Let's write an awesome story",
+    });
+  }, []);
+
   return (
     <>
       <nav className="navbar">
@@ -115,6 +126,8 @@ const BlogEditor = () => {
             ></textarea>
 
             <hr className="w-full opacity-10 my-5" />
+
+            <div id="textEditor" className="font-gelasio"></div>
           </div>
         </section>
       </AnimationWrapper>
