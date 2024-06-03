@@ -14,6 +14,9 @@ const BlogEditor = () => {
     blog,
     blog: { title, banner, content, description, tags },
     setBlog,
+    textEditor,
+    setTextEditor,
+    setEditorState,
   } = useContext(EditorContext);
 
   const handleBannerUpload = async (e) => {
@@ -69,13 +72,46 @@ const BlogEditor = () => {
     img.src = `${defaultBanner}`;
   };
 
+  const handlePublishEvent = async (e) => {
+    try {
+      if (!banner.length) {
+        return toast.error("Upload blog banner to proceed.");
+      }
+
+      if (!title.length) {
+        return toast.error("Blog title is required to publish the blog.");
+      }
+
+      if (textEditor.isReady) {
+        const { blocks: data } = await textEditor.save();
+
+        if (data.length) {
+          setBlog((prevState) => {
+            return {
+              ...prevState,
+              content: data,
+            };
+          });
+          setEditorState("publish");
+        } else {
+          return toast.error("Blog content is required to publish the blog.");
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Error publishing the blog, try again.");
+    }
+  };
+
   useEffect(() => {
-    let editor = new EditorJS({
-      holderId: "textEditor",
-      data: "",
-      tools,
-      placeholder: "Let's write an awesome story",
-    });
+    setTextEditor(
+      new EditorJS({
+        holderId: "textEditor",
+        data: "",
+        tools,
+        placeholder: "Let's write an awesome story",
+      })
+    );
   }, []);
 
   return (
@@ -90,7 +126,9 @@ const BlogEditor = () => {
         </p>
 
         <div className="flex gap-4 ml-auto">
-          <button className="btn-dark py-2">Publish</button>
+          <button className="btn-dark py-2" onClick={handlePublishEvent}>
+            Publish
+          </button>
           <button className="btn-light py-2">Save Draft</button>
         </div>
       </nav>

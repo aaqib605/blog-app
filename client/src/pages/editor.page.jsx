@@ -16,8 +16,9 @@ const blogStructure = {
 export const EditorContext = createContext({});
 
 const Editor = () => {
-  const [editorState, setEditorState] = useState("editor");
   const [blog, setBlog] = useState(blogStructure);
+  const [editorState, setEditorState] = useState("editor");
+  const [textEditor, setTextEditor] = useState({ isReady: false });
 
   const {
     userAuth: { jwtToken },
@@ -29,7 +30,14 @@ const Editor = () => {
 
   return (
     <EditorContext.Provider
-      value={{ blog, setBlog, editorState, setEditorState }}
+      value={{
+        blog,
+        setBlog,
+        editorState,
+        setEditorState,
+        textEditor,
+        setTextEditor,
+      }}
     >
       {editorState === "editor" ? <BlogEditor /> : <PublishForm />}
     </EditorContext.Provider>
