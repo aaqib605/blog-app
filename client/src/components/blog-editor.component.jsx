@@ -83,9 +83,9 @@ const BlogEditor = () => {
       }
 
       if (textEditor.isReady) {
-        const { blocks: data } = await textEditor.save();
+        const data = await textEditor.save();
 
-        if (data.length) {
+        if (data.blocks.length) {
           setBlog((prevState) => {
             return {
               ...prevState,
@@ -107,7 +107,7 @@ const BlogEditor = () => {
     setTextEditor(
       new EditorJS({
         holderId: "textEditor",
-        data: "",
+        data: content,
         tools,
         placeholder: "Let's write an awesome story",
       })
@@ -157,6 +157,7 @@ const BlogEditor = () => {
             </div>
 
             <textarea
+              value={title}
               placeholder="Blog Title"
               className="text-4xl font-medium w-full h-20 outline-none resize-none mt-10 leading-tight placeholder:opacity-40"
               onKeyDown={handleTitleKeyDown}
