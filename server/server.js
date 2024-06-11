@@ -6,10 +6,11 @@ import jwt from "jsonwebtoken";
 import cors from "cors";
 import admin from "firebase-admin";
 import { getAuth } from "firebase-admin/auth";
-import aws from "aws-sdk"
+import aws from "aws-sdk";
 import User from "./schema/User.js";
 import connectDB from "./config/db.js";
 import serviceAccountKey from "./blog-app-firebase-adminsdk.json" with { type: "json" };
+import Blog from "./schema/Blog.js";
 
 connectDB();
 
@@ -23,7 +24,7 @@ const s3 = new aws.S3({
   region: "eu-north-1",
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-})
+});
 
 const PORT = process.env.PORT || 8000;
 const app = express();
@@ -41,10 +42,10 @@ const generateUploadImageURL = async () => {
     Key: imgName,
     Expires: 1000,
     ContentType: "image/jpeg",
-  })
+  });
 
   return uploadImageURL;
-}
+};
 
 const formatUserData = (user) => {
   const accessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
@@ -67,7 +68,23 @@ const generateUsername = async (email) => {
   return username;
 };
 
+const verifyJWT = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
 
+  if (!token) {
+    return res.status(401).json({ error: "No access token found." });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: "Invalid access token." });
+    }
+
+    req.user = user.id;
+    next();
+  });
+};
 
 app.post("/signup", async (req, res) => {
   try {
@@ -112,7 +129,7 @@ app.post("/signin", async (req, res) => {
     const user = await User.findOne({ "personalInfo.email": email });
 
     if (!user) {
-      return res.status(400).json({error: "Invalid credentials"});
+      return res.status(400).json({ error: "Invalid credentials" });
     }
 
     if (!user.googleAuth) {
@@ -176,16 +193,96 @@ app.post("/google-auth", async (req, res) => {
         "Failed to authenticate you with Google. Try again with another Google Account.",
     });
   }
-}); 
+});
 
 app.get("/get-upload-image-url", async (req, res) => {
   try {
     const uploadImageURL = await generateUploadImageURL();
-    res.status(200).json({uploadImageURL});
+    res.status(200).json({ uploadImageURL });
   } catch (error) {
     console.log(error.message);
-    return res.status(500).json({error: error.message})
+    return res.status(500).json({ error: error.message });
   }
-})
+});
+
+app.post("/create-blog", verifyJWT, (req, res) => {
+  const authorId = req.user;
+
+  let { title, description, tags, banner, content, draft } = req.body;
+
+  if (!title.length) {
+    return res
+      .status(403)
+      .json({ error: "You must provide a blog title to publish a blog." });
+  }
+
+  if (!description.length || description.length > 200) {
+    return res.status(403).json({
+      error: "You must provide a blog description under 200 characters.",
+    });
+  }
+
+  if (!banner.length) {
+    return res
+      .status(403)
+      .json({ error: "You must provide a blog banner to publish a blog." });
+  }
+
+  if (!content.blocks.length) {
+    return res
+      .status(403)
+      .json({ error: "You must provide blog content to publish a blog." });
+  }
+
+  if (!tags.length || tags.length > 10) {
+    return res
+      .status(403)
+      .json({ error: "You must provide tags (max 10) to publish a blog." });
+  }
+
+  tags = tags.map((tag) => tag.toLowerCase());
+
+  const blogId =
+    title
+      .replace(/[^a-zA-Z0-9]/g, " ")
+      .replace(/\s+/g, "-")
+      .trim() + nanoid();
+
+  const blog = new Blog({
+    title,
+    description,
+    banner,
+    content,
+    tags,
+    author: authorId,
+    blogId,
+    draft: Boolean(draft),
+  });
+
+  blog
+    .save()
+    .then((blog) => {
+      const incrementValue = draft ? 0 : 1;
+
+      User.findOneAndUpdate(
+        { _id: authorId },
+        {
+          $inc: { "accountInfo.totalPosts": incrementValue },
+          $push: { blogs: blog._id },
+        }
+      )
+        .then((user) => {
+          return res.status(201).json({ id: blog.blogId });
+        })
+        .catch((err) => {
+          return res
+            .status(500)
+            .json({ error: "Failed to update total number of posts." });
+        });
+    })
+    .catch((err) => {
+      return res.status(500).json({ error: err.message });
+    });
+});
 
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));

@@ -130,7 +130,7 @@ const PublishForm = () => {
             />
 
             {tags.map((tag, i) => {
-              return <Tag key={i} tag={tag} tagIndex={i} />;
+              return <Tag key={i} tag={tag} />;
             })}
           </div>
 

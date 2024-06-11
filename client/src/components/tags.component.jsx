@@ -1,14 +1,13 @@
 import { useContext } from "react";
 import { EditorContext } from "../pages/editor.page";
 
-const Tag = ({ tag, tagIndex }) => {
+const Tag = ({ tag }) => {
   let {
     blog: { tags },
     setBlog,
   } = useContext(EditorContext);
 
   const handleDeleteTag = () => {
-    console.log(tag);
     tags = tags.filter((currentTag) => currentTag !== tag);
 
     setBlog((prevState) => {

@@ -95,12 +95,12 @@ const userSchema = mongoose.Schema(
         default: "",
       },
     },
-    account_info: {
-      total_posts: {
+    accountInfo: {
+      totalPosts: {
         type: Number,
         default: 0,
       },
-      total_reads: {
+      totalReads: {
         type: Number,
         default: 0,
       },
