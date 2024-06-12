@@ -1,6 +1,7 @@
 import { useContext, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
+import axios from "axios";
 import EditorJS from "@editorjs/editorjs";
 import { tools } from "./tools.component";
 import logo from "../imgs/logo.png";
@@ -8,6 +9,7 @@ import AnimationWrapper from "../common/page-animation";
 import defaultBanner from "../imgs/blog banner.png";
 import { uploadImage } from "../common/aws";
 import { EditorContext } from "../pages/editor.page";
+import { UserContext } from "../App";
 
 const BlogEditor = () => {
   const {
@@ -18,6 +20,12 @@ const BlogEditor = () => {
     setTextEditor,
     setEditorState,
   } = useContext(EditorContext);
+
+  const {
+    userAuth: { jwtToken },
+  } = useContext(UserContext);
+
+  const navigate = useNavigate();
 
   const handleBannerUpload = async (e) => {
     let img = e.target.files[0];
@@ -103,6 +111,56 @@ const BlogEditor = () => {
     }
   };
 
+  const handleSaveDraft = (e) => {
+    if (e.target.className.includes("disable")) {
+      return;
+    }
+
+    if (!title.length) {
+      return toast.error("Blog title is required for saving the draft.");
+    }
+
+    let loadingToast = toast.loading("Saving Draft...");
+
+    e.target.classList.add("disable");
+
+    if (textEditor.isReady) {
+      textEditor.save().then((content) => {
+        const blogObj = {
+          title,
+          banner,
+          description,
+          content,
+          tags,
+          draft: true,
+        };
+
+        axios
+          .post(`${import.meta.env.VITE_SERVER_DOMAIN}/create-blog`, blogObj, {
+            headers: {
+              Authorization: `Bearer ${jwtToken}`,
+            },
+          })
+          .then(() => {
+            e.target.classList.remove("disable");
+
+            toast.dismiss(loadingToast);
+            toast.success("Draft saved 🎉");
+
+            setTimeout(() => {
+              navigate("/");
+            }, 500);
+          })
+          .catch(({ response }) => {
+            e.target.classList.remove("disable");
+            toast.dismiss(loadingToast);
+
+            return toast.error(response.data.error);
+          });
+      });
+    }
+  };
+
   useEffect(() => {
     setTextEditor(
       new EditorJS({
@@ -129,7 +187,9 @@ const BlogEditor = () => {
           <button className="btn-dark py-2" onClick={handlePublishEvent}>
             Publish
           </button>
-          <button className="btn-light py-2">Save Draft</button>
+          <button className="btn-light py-2" onClick={handleSaveDraft}>
+            Save Draft
+          </button>
         </div>
       </nav>
 
