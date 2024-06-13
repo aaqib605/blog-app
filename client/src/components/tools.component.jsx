@@ -27,13 +27,17 @@ const uploadImageByURL = async (e) => {
 };
 
 const uploadImageByFile = async (e) => {
-  const url = await uploadImage(e);
+  try {
+    const url = await uploadImage(e);
 
-  if (url) {
-    return {
-      success: 1,
-      file: { url },
-    };
+    if (url) {
+      return {
+        success: 1,
+        file: { url },
+      };
+    }
+  } catch (error) {
+    console.error(error);
   }
 };
 

@@ -13,7 +13,6 @@ import { UserContext } from "../App";
 
 const BlogEditor = () => {
   const {
-    blog,
     blog: { title, banner, content, description, tags },
     setBlog,
     textEditor,
