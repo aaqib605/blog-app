@@ -206,7 +206,7 @@ app.get("/get-upload-image-url", async (req, res) => {
 });
 
 app.get("/latest-blogs", async (req, res) => {
-  const maxLimit = 3;
+  const maxLimit = 5;
 
   try {
     const blogs = await Blog.find({ draft: false })
