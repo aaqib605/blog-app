@@ -205,6 +205,22 @@ app.get("/get-upload-image-url", async (req, res) => {
   }
 });
 
+app.get("/latest-blogs", async (req, res) => {
+  const maxLimit = 3;
+
+  try {
+    const blogs = await Blog.find({ draft: false })
+      .populate("author", "personalInfo.profileImg personalInfo.username personalInfo.fullname -_id")
+      .sort({ "publishedAt": -1 })
+      .select("blogId title description banner activity tags publishedAt -_id")
+      .limit(maxLimit);
+
+    return res.status(200).json({ blogs });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/create-blog", verifyJWT, (req, res) => {
   const authorId = req.user;
 
