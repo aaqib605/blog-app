@@ -5,7 +5,7 @@ import InPageNavigation from "../components/inpage-navigation.component";
 import BlogPostCard from "../components/blog-post.component";
 import Loader from "../components/loader.component";
 import MinimalBlogPost from "../components/nobanner-blog-post.component";
-import { activeTabRef } from "../components/inpage-navigation.component";
+import NoDataMessage from "../components/nodata.component";
 import { buttonRef } from "../components/inpage-navigation.component";
 
 const HomePage = () => {
@@ -30,6 +30,7 @@ const HomePage = () => {
     "artificial intelligence",
     "environment",
     "eco friendly",
+    "test filter",
   ];
 
   const fetchLatestBlogs = async () => {
@@ -111,7 +112,7 @@ const HomePage = () => {
           >
             {latestBlogs === null ? (
               <Loader />
-            ) : (
+            ) : latestBlogs.length ? (
               latestBlogs.map((blog, index) => {
                 return (
                   <AnimationWrapper
@@ -125,11 +126,13 @@ const HomePage = () => {
                   </AnimationWrapper>
                 );
               })
+            ) : (
+              <NoDataMessage message={"No blogs published."} />
             )}
 
             {trendingBlogs === null ? (
               <Loader />
-            ) : (
+            ) : trendingBlogs.length ? (
               trendingBlogs.map((blog, index) => {
                 return (
                   <AnimationWrapper
@@ -140,6 +143,8 @@ const HomePage = () => {
                   </AnimationWrapper>
                 );
               })
+            ) : (
+              <NoDataMessage message={"No trending blogs available."} />
             )}
           </InPageNavigation>
         </div>
@@ -176,7 +181,7 @@ const HomePage = () => {
 
               {trendingBlogs === null ? (
                 <Loader />
-              ) : (
+              ) : trendingBlogs.length ? (
                 trendingBlogs.map((blog, index) => {
                   return (
                     <AnimationWrapper
@@ -187,6 +192,8 @@ const HomePage = () => {
                     </AnimationWrapper>
                   );
                 })
+              ) : (
+                <NoDataMessage message={"No trending blogs available."} />
               )}
             </div>
           </div>
