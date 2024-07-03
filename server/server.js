@@ -319,4 +319,22 @@ app.post("/create-blog", verifyJWT, (req, res) => {
     });
 });
 
+app.post("/search-blogs", async (req, res) => {
+  const maxLimit = 5;
+  const {tag} = req.body;
+  
+  try {
+    const findQuery = {tags: tag, draft: false};
+    const blogs = await Blog.find(findQuery)
+      .populate("author", "personalInfo.profileImg personalInfo.username personalInfo.fullname -_id")
+      .sort({ "publishedAt": -1 })
+      .select("blogId title description banner activity tags publishedAt -_id")
+      .limit(maxLimit);
+
+    return res.status(200).json({ blogs });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
