@@ -378,4 +378,18 @@ app.post("/all-latest-blogs-count", async(req, res) => {
   }
 });
 
+app.post("/search-users", async (req, res) => {
+  const { query } = req.body;
+
+  try {
+    const users = await User.find({"personalInfo.username": new RegExp(query, "i")})
+      .limit(50)
+      .select("personalInfo.fullname personalInfo.username personalInfo.profileImg -_id")
+
+    return res.status(200).json({users});
+  } catch (err) {
+    return res.status(500).json({error: err.message})
+  }
+});
+
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
