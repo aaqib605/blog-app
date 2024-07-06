@@ -323,7 +323,7 @@ app.post("/create-blog", verifyJWT, (req, res) => {
 
 app.post("/search-blogs", async (req, res) => {
   const maxLimit = 5;
-  const {tag} = req.body;
+  const {tag, page} = req.body;
   
   try {
     const findQuery = {tags: tag, draft: false};
@@ -331,11 +331,27 @@ app.post("/search-blogs", async (req, res) => {
       .populate("author", "personalInfo.profileImg personalInfo.username personalInfo.fullname -_id")
       .sort({ "publishedAt": -1 })
       .select("blogId title description banner activity tags publishedAt -_id")
+      .skip((page - 1) * maxLimit)
       .limit(maxLimit);
 
     return res.status(200).json({ blogs });
   } catch (err) {
     return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/search-blogs-count", async (req, res) => {
+  const {tag} = req.body;
+
+  try {
+    const findQuery = {tags: tag, draft: false};
+    const documentCount = await Blog.countDocuments(findQuery);
+
+    res.status(200).json({totalDocs: documentCount});
+    
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({error: err.message});
   }
 });
 

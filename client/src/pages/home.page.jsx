@@ -84,18 +84,27 @@ const HomePage = () => {
     setPageState(category);
   };
 
-  const fetchBlogsByCategory = async () => {
+  const fetchBlogsByCategory = async ({ page = 1 }) => {
+    console.log(page);
     try {
       const {
         data: { blogs },
       } = await axios.post(
         `${import.meta.env.VITE_SERVER_DOMAIN}/search-blogs`,
-        { tag: pageState }
+        { tag: pageState, page }
       );
 
-      setLatestBlogs(blogs);
-    } catch (error) {
-      console.log(error);
+      const formattedData = await filterPaginationData({
+        existingBlogs: latestBlogs,
+        newFetchedBlogs: blogs,
+        page,
+        countRoute: "search-blogs-count",
+        dataToSend: { tag: pageState },
+      });
+
+      setLatestBlogs(formattedData);
+    } catch (err) {
+      console.log(err.message);
     }
   };
 
@@ -105,7 +114,7 @@ const HomePage = () => {
     if (pageState === "home") {
       fetchLatestBlogs({ page: 1 });
     } else {
-      fetchBlogsByCategory();
+      fetchBlogsByCategory({ page: 1 });
     }
 
     if (trendingBlogs === null) {
@@ -144,7 +153,9 @@ const HomePage = () => {
               )}
               <LoadMoreBlogsBtn
                 state={latestBlogs}
-                fetchDataFunction={fetchLatestBlogs}
+                fetchDataFunction={
+                  pageState === "home" ? fetchLatestBlogs : fetchBlogsByCategory
+                }
               />
             </>
 
