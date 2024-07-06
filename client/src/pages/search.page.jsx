@@ -8,6 +8,7 @@ import NoDataMessage from "../components/nodata.component";
 import AnimationWrapper from "../common/page-animation";
 import { filterPaginationData } from "../common/filter-pagination-data";
 import LoadMoreBlogsBtn from "../components/load-more.component";
+import UserCard from "../components/usercard.component";
 
 const SearchPage = () => {
   const [blogs, setBlogs] = useState(null);
@@ -59,6 +60,29 @@ const SearchPage = () => {
     setUsers(null);
   };
 
+  const UserCardWrapper = () => {
+    return (
+      <>
+        {users === null ? (
+          <Loader />
+        ) : users.length ? (
+          users.map((user, index) => {
+            return (
+              <AnimationWrapper
+                key={index}
+                transition={{ duration: 1, delay: index * 0.08 }}
+              >
+                <UserCard user={user} />
+              </AnimationWrapper>
+            );
+          })
+        ) : (
+          <NoDataMessage message={"No user found."} />
+        )}
+      </>
+    );
+  };
+
   useEffect(() => {
     resetState();
     searchBlogs({ page: 1, createNewArr: true });
@@ -95,7 +119,17 @@ const SearchPage = () => {
 
             <LoadMoreBlogsBtn state={blogs} fetchDataFunction={searchBlogs} />
           </>
+
+          <UserCardWrapper />
         </InPageNavigation>
+      </div>
+
+      <div className="min-w-[40%] lg:min-w-[350px] max-w-min border-l border-grey pl-8 pt-3 max-md:hidden">
+        <h1 className="font-medium text-xl mb-8">
+          <i className="fi fi-rr-user"></i> Users related to search
+        </h1>
+
+        <UserCardWrapper />
       </div>
     </section>
   );
