@@ -1,4 +1,4 @@
-import express from "express";
+import express, { query } from "express";
 import "dotenv/config";
 import bcrypt from "bcrypt";
 import { nanoid } from "nanoid";
@@ -323,10 +323,16 @@ app.post("/create-blog", verifyJWT, (req, res) => {
 
 app.post("/search-blogs", async (req, res) => {
   const maxLimit = 5;
-  const {tag, page} = req.body;
+  const {tag, page, query} = req.body;
+  let findQuery;
   
   try {
-    const findQuery = {tags: tag, draft: false};
+    if (tag) {
+      findQuery = {tags: tag, draft: false};
+    } else if (query) {
+      findQuery = {draft: false, title: new RegExp(query, "i")};
+    }
+
     const blogs = await Blog.find(findQuery)
       .populate("author", "personalInfo.profileImg personalInfo.username personalInfo.fullname -_id")
       .sort({ "publishedAt": -1 })
@@ -341,10 +347,16 @@ app.post("/search-blogs", async (req, res) => {
 });
 
 app.post("/search-blogs-count", async (req, res) => {
-  const {tag} = req.body;
+  const { tag, query } = req.body;
+  let findQuery;
 
   try {
-    const findQuery = {tags: tag, draft: false};
+    if (tag) {
+      findQuery = {tags: tag, draft: false};
+    } else if (query) {
+      findQuery = {draft: false, title: new RegExp(query, "i")};
+    }
+
     const documentCount = await Blog.countDocuments(findQuery);
 
     res.status(200).json({totalDocs: documentCount});

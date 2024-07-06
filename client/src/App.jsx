@@ -27,7 +27,7 @@ const App = () => {
           <Route index element={<HomePage />} />
           <Route path="signin" element={<UserAuthForm type="Sign In" />} />
           <Route path="signup" element={<UserAuthForm type="Sign Up" />} />
-          <Route path="search/:searchQuery" element={<SearchPage />} />
+          <Route path="search/:query" element={<SearchPage />} />
         </Route>
         <Route path="/editor" element={<Editor />} />
       </Routes>
