@@ -206,7 +206,7 @@ app.get("/get-upload-image-url", async (req, res) => {
 });
 
 app.post("/latest-blogs", async (req, res) => {
-  const {page} = req.body;
+  const { page } = req.body;
   const maxLimit = 5;
 
   try {

@@ -85,7 +85,6 @@ const HomePage = () => {
   };
 
   const fetchBlogsByCategory = async ({ page = 1 }) => {
-    console.log(page);
     try {
       const {
         data: { blogs },
@@ -151,6 +150,7 @@ const HomePage = () => {
               ) : (
                 <NoDataMessage message={"No blogs published."} />
               )}
+
               <LoadMoreBlogsBtn
                 state={latestBlogs}
                 fetchDataFunction={

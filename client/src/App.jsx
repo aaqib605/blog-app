@@ -1,10 +1,11 @@
+import { createContext, useEffect, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/navbar.component";
 import HomePage from "./pages/home.page";
 import UserAuthForm from "./pages/userAuthForm.page";
-import { createContext, useEffect, useState } from "react";
-import { lookInSession } from "./common/session";
 import Editor from "./pages/editor.page";
+import SearchPage from "./pages/search.page";
+import { lookInSession } from "./common/session";
 
 export const UserContext = createContext({});
 
@@ -26,6 +27,7 @@ const App = () => {
           <Route index element={<HomePage />} />
           <Route path="signin" element={<UserAuthForm type="Sign In" />} />
           <Route path="signup" element={<UserAuthForm type="Sign Up" />} />
+          <Route path="search/:searchQuery" element={<SearchPage />} />
         </Route>
         <Route path="/editor" element={<Editor />} />
       </Routes>
