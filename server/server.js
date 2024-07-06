@@ -205,7 +205,8 @@ app.get("/get-upload-image-url", async (req, res) => {
   }
 });
 
-app.get("/latest-blogs", async (req, res) => {
+app.post("/latest-blogs", async (req, res) => {
+  const {page} = req.body;
   const maxLimit = 5;
 
   try {
@@ -213,6 +214,7 @@ app.get("/latest-blogs", async (req, res) => {
       .populate("author", "personalInfo.profileImg personalInfo.username personalInfo.fullname -_id")
       .sort({ "publishedAt": -1 })
       .select("blogId title description banner activity tags publishedAt -_id")
+      .skip((page - 1) * maxLimit)
       .limit(maxLimit);
 
     return res.status(200).json({ blogs });
@@ -334,6 +336,17 @@ app.post("/search-blogs", async (req, res) => {
     return res.status(200).json({ blogs });
   } catch (err) {
     return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/all-latest-blogs-count", async(req, res) => {
+  try {
+    const documentCount = await Blog.countDocuments({draft: false});
+    
+    return res.status(200).json({totalDocs: documentCount});
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({error: error.message});
   }
 });
 

@@ -7,6 +7,8 @@ import Loader from "../components/loader.component";
 import MinimalBlogPost from "../components/nobanner-blog-post.component";
 import NoDataMessage from "../components/nodata.component";
 import { buttonRef } from "../components/inpage-navigation.component";
+import filterPaginationData from "../common/filter-pagination-data";
+import LoadMoreBlogsBtn from "../components/load-more.component";
 
 const HomePage = () => {
   const [latestBlogs, setLatestBlogs] = useState(null);
@@ -33,13 +35,23 @@ const HomePage = () => {
     "test filter",
   ];
 
-  const fetchLatestBlogs = async () => {
+  const fetchLatestBlogs = async ({ page = 1 }) => {
     try {
       const {
         data: { blogs },
-      } = await axios.get(`${import.meta.env.VITE_SERVER_DOMAIN}/latest-blogs`);
+      } = await axios.post(
+        `${import.meta.env.VITE_SERVER_DOMAIN}/latest-blogs`,
+        { page }
+      );
 
-      setLatestBlogs(blogs);
+      const formattedData = await filterPaginationData({
+        existingBlogs: latestBlogs,
+        newFetchedBlogs: blogs,
+        page,
+        countRoute: "all-latest-blogs-count",
+      });
+
+      setLatestBlogs(formattedData);
     } catch (error) {
       console.log(error);
     }
@@ -91,7 +103,7 @@ const HomePage = () => {
     buttonRef.current.click();
 
     if (pageState === "home") {
-      fetchLatestBlogs();
+      fetchLatestBlogs({ page: 1 });
     } else {
       fetchBlogsByCategory();
     }
@@ -110,25 +122,31 @@ const HomePage = () => {
             routes={[pageState, "trending blogs"]}
             defaultHidden={["trending blogs"]}
           >
-            {latestBlogs === null ? (
-              <Loader />
-            ) : latestBlogs.length ? (
-              latestBlogs.map((blog, index) => {
-                return (
-                  <AnimationWrapper
-                    key={index}
-                    transition={{ duration: 1, delay: index * 0.1 }}
-                  >
-                    <BlogPostCard
-                      blog={blog}
-                      author={blog.author.personalInfo}
-                    />
-                  </AnimationWrapper>
-                );
-              })
-            ) : (
-              <NoDataMessage message={"No blogs published."} />
-            )}
+            <>
+              {latestBlogs === null ? (
+                <Loader />
+              ) : latestBlogs.results.length ? (
+                latestBlogs.results.map((blog, index) => {
+                  return (
+                    <AnimationWrapper
+                      key={index}
+                      transition={{ duration: 1, delay: index * 0.1 }}
+                    >
+                      <BlogPostCard
+                        blog={blog}
+                        author={blog.author.personalInfo}
+                      />
+                    </AnimationWrapper>
+                  );
+                })
+              ) : (
+                <NoDataMessage message={"No blogs published."} />
+              )}
+              <LoadMoreBlogsBtn
+                state={latestBlogs}
+                fetchDataFunction={fetchLatestBlogs}
+              />
+            </>
 
             {trendingBlogs === null ? (
               <Loader />
