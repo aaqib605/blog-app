@@ -378,6 +378,20 @@ app.post("/all-latest-blogs-count", async(req, res) => {
   }
 });
 
+app.post("/get-profile", async(req, res) => {
+  const { username } = req.body;
+
+  try {
+    const user = await User.findOne({"personalInfo.username": username})
+      .select("-personalInfo.password -googleAuth -updatedAt -blogs");
+
+    return res.status(200).json(user);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({error: error.message});
+  }
+});
+
 app.post("/search-users", async (req, res) => {
   const { query } = req.body;
 
