@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { getDate } from "../common/date";
+import { getDay } from "../common/date";
 
 const BlogPostCard = ({ blog, author }) => {
   const {
@@ -28,7 +28,7 @@ const BlogPostCard = ({ blog, author }) => {
           <p className="line-clamp-1">
             {fullname} @{username}
           </p>
-          <p className="min-w-fit">{getDate(publishedAt)}</p>
+          <p className="min-w-fit">{getDay(publishedAt)}</p>
         </div>
 
         <h1 className="blog-title">{title}</h1>

@@ -69,7 +69,7 @@ const userSchema = mongoose.Schema(
         },
       },
     },
-    social_links: {
+    socialLinks: {
       youtube: {
         type: String,
         default: "",

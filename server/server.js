@@ -323,7 +323,7 @@ app.post("/create-blog", verifyJWT, (req, res) => {
 
 app.post("/search-blogs", async (req, res) => {
   const maxLimit = 5;
-  const {tag, page, query} = req.body;
+  const {tag, page, query, author} = req.body;
   let findQuery;
   
   try {
@@ -331,6 +331,8 @@ app.post("/search-blogs", async (req, res) => {
       findQuery = {tags: tag, draft: false};
     } else if (query) {
       findQuery = {draft: false, title: new RegExp(query, "i")};
+    } else if (author) {
+      findQuery = {draft: false, author}
     }
 
     const blogs = await Blog.find(findQuery)
@@ -347,7 +349,7 @@ app.post("/search-blogs", async (req, res) => {
 });
 
 app.post("/search-blogs-count", async (req, res) => {
-  const { tag, query } = req.body;
+  const { tag, query, author } = req.body;
   let findQuery;
 
   try {
@@ -355,6 +357,8 @@ app.post("/search-blogs-count", async (req, res) => {
       findQuery = {tags: tag, draft: false};
     } else if (query) {
       findQuery = {draft: false, title: new RegExp(query, "i")};
+    } else if (author) {
+      findQuery = {draft: false, author}
     }
 
     const documentCount = await Blog.countDocuments(findQuery);
