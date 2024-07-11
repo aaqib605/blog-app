@@ -322,13 +322,13 @@ app.post("/create-blog", verifyJWT, (req, res) => {
 });
 
 app.post("/search-blogs", async (req, res) => {
-  const maxLimit = 5;
-  const {tag, page, query, author} = req.body;
+  const {tag, page, query, author, limit, eliminateBlog} = req.body;
+  const maxLimit = limit ? limit : 5;
   let findQuery;
   
   try {
     if (tag) {
-      findQuery = {tags: tag, draft: false};
+      findQuery = {tags: tag, draft: false, blogId: {$ne: eliminateBlog}};
     } else if (query) {
       findQuery = {draft: false, title: new RegExp(query, "i")};
     } else if (author) {
@@ -411,7 +411,7 @@ app.post("/search-users", async (req, res) => {
 });
 
 app.post("/get-blog", async (req, res) => {
-  const {blogId} = req.body;
+  const { blogId } = req.body;
   let incrementValue = 1;
 
   try {
