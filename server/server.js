@@ -410,4 +410,21 @@ app.post("/search-users", async (req, res) => {
   }
 });
 
+app.post("/get-blog", async (req, res) => {
+  const {blogId} = req.body;
+  let incrementValue = 1;
+
+  try {
+    const blog = await Blog.findOneAndUpdate({blogId}, {$inc: {"activity.totalReads": incrementValue}})
+      .populate("author", "personalInfo.fullname personalInfo.username personalInfo.profileImg")
+      .select("title description content banner activity publishedAt blogId tags");
+
+    const user = await User.findOneAndUpdate({"personalInfo.username": blog.author.personalInfo.  username}, {$inc: {"accountInfo.totalReads": incrementValue}});
+  
+    return res.status(200).json({blog});
+  } catch (error) {
+    return res.status(500).json({error: error.message});
+  }
+});
+
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
