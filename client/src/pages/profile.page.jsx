@@ -89,7 +89,9 @@ const ProfilePage = () => {
       formattedData.userId = userId;
 
       setBlogs(formattedData);
-    } catch (error) {}
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const resetState = () => {
