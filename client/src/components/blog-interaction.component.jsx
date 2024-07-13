@@ -31,26 +31,26 @@ const BlogInteraction = () => {
   } = useContext(UserContext);
 
   const handleLike = async () => {
-    if (jwtToken) {
-      setIsLikedByUser((prevState) => !prevState);
-
-      !isLikedByUser ? totalLikes++ : totalLikes--;
-
-      setBlog({ ...blog, activity: { ...activity, totalLikes } });
-    } else {
-      toast.error("Please login to like this blog post");
-    }
-
     try {
-      const { data } = await axios.post(
-        `${import.meta.env.VITE_SERVER_DOMAIN}/like-blog`,
-        { _id, isLikedByUser },
-        {
-          headers: {
-            Authorization: `Bearer ${jwtToken}`,
-          },
-        }
-      );
+      if (jwtToken) {
+        setIsLikedByUser((prevState) => !prevState);
+
+        !isLikedByUser ? totalLikes++ : totalLikes--;
+
+        setBlog({ ...blog, activity: { ...activity, totalLikes } });
+
+        const { data } = await axios.post(
+          `${import.meta.env.VITE_SERVER_DOMAIN}/like-blog`,
+          { _id, isLikedByUser },
+          {
+            headers: {
+              Authorization: `Bearer ${jwtToken}`,
+            },
+          }
+        );
+      } else {
+        toast.error("Please login to like this blog post");
+      }
     } catch (error) {
       console.log(error);
       toast.error(error.message);
