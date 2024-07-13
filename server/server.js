@@ -1,4 +1,4 @@
-import express, { query, response } from "express";
+import express from "express";
 import "dotenv/config";
 import bcrypt from "bcrypt";
 import { nanoid } from "nanoid";
@@ -7,10 +7,12 @@ import cors from "cors";
 import admin from "firebase-admin";
 import { getAuth } from "firebase-admin/auth";
 import aws from "aws-sdk";
-import User from "./schema/User.js";
 import connectDB from "./config/db.js";
 import serviceAccountKey from "./blog-app-firebase-adminsdk.json" with { type: "json" };
+
+import User from "./schema/User.js";
 import Blog from "./schema/Blog.js";
+import Notification from "./schema/Notification.js";
 
 connectDB();
 
@@ -430,10 +432,55 @@ app.post("/get-blog", async (req, res) => {
       .populate("author", "personalInfo.fullname personalInfo.username personalInfo.profileImg")
       .select("title description content banner activity publishedAt blogId tags");
 
-    const user = await User.findOneAndUpdate({"personalInfo.username": blog.author.personalInfo.  username}, {$inc: {"accountInfo.totalReads": incrementValue}});
+    const user = await User.findOneAndUpdate({"personalInfo.username": blog.author.personalInfo.username}, {$inc: {"accountInfo.totalReads": incrementValue}});
   
     return res.status(200).json({blog});
   } catch (error) {
+    return res.status(500).json({error: error.message});
+  }
+});
+
+app.post("/like-blog", verifyJWT, async (req, res) => {
+  const userId = req.user;
+  const { _id, isLikedByUser } = req.body;
+
+  const incrementValue = !isLikedByUser  ? 1 : -1;
+
+  try {
+    const blog = await Blog.findOneAndUpdate({_id}, {$inc: {"activity.totalLikes": incrementValue}});
+
+    if (!isLikedByUser) {
+      const like = new Notification({
+        type: "like",
+        blog: _id,
+        notificationFor: blog.author,
+        user: userId
+      })
+
+      const notification = await like.save();
+
+      return res.status(200).json({isLikedByUser: true});
+    } else {
+      const data = await Notification.findOneAndDelete({user: userId, blog: _id, type: "like"});
+
+      return res.status(200).json({isLikedByUser: false})
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({error: error.message});
+  }
+});
+
+app.post("/liked-by-user", verifyJWT, async (req, res) => {
+  const userId = req.user;
+  const { _id } = req.body;
+
+  try {
+    const result = await Notification.exists({user: userId, type: "like", blog: _id});
+
+    return res.status(200).json({result});
+  } catch (error) {
+    console.log(error);
     return res.status(500).json({error: error.message});
   }
 });
