@@ -1,4 +1,4 @@
-import express, { query } from "express";
+import express, { query, response } from "express";
 import "dotenv/config";
 import bcrypt from "bcrypt";
 import { nanoid } from "nanoid";
@@ -242,7 +242,7 @@ app.get("/trending-blogs", async (req, res) => {
 app.post("/create-blog", verifyJWT, (req, res) => {
   const authorId = req.user;
 
-  let { title, description, tags, banner, content, draft } = req.body;
+  let { title, description, tags, banner, content, draft, id } = req.body;
 
   if (!title.length) {
     return res
@@ -278,13 +278,21 @@ app.post("/create-blog", verifyJWT, (req, res) => {
 
   tags = tags.map((tag) => tag.toLowerCase());
 
-  const blogId =
+  const blogId = id ||
     title
       .replace(/[^a-zA-Z0-9]/g, " ")
       .replace(/\s+/g, "-")
       .trim() + nanoid();
 
-  const blog = new Blog({
+  if (id) {
+    Blog.findOneAndUpdate({blogId}, {title, description, banner, content, tags, draft: Boolean(draft)})
+      .then(() => {
+        return res.status(200).json({id: blogId})
+      }).catch(err => {
+        return res.status(500).json({err: err.message});
+      })
+  } else {
+    const blog = new Blog({
     title,
     description,
     banner,
@@ -319,6 +327,9 @@ app.post("/create-blog", verifyJWT, (req, res) => {
     .catch((err) => {
       return res.status(500).json({ error: err.message });
     });
+  }
+
+  
 });
 
 app.post("/search-blogs", async (req, res) => {
@@ -411,8 +422,8 @@ app.post("/search-users", async (req, res) => {
 });
 
 app.post("/get-blog", async (req, res) => {
-  const { blogId } = req.body;
-  let incrementValue = 1;
+  const { blogId, draft, mode } = req.body;
+  let incrementValue = mode !== "edit" ? 1 : 0;
 
   try {
     const blog = await Blog.findOneAndUpdate({blogId}, {$inc: {"activity.totalReads": incrementValue}})

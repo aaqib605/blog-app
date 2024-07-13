@@ -1,7 +1,7 @@
 import { useContext } from "react";
 import axios from "axios";
 import { Toaster, toast } from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import AnimationWrapper from "../common/page-animation";
 import { EditorContext } from "../pages/editor.page";
 import Tag from "./tags.component";
@@ -10,6 +10,8 @@ import { UserContext } from "../App";
 const PublishForm = () => {
   const characterLimit = 200;
   const tagsLimit = 10;
+
+  const { blogId } = useParams();
 
   const {
     blog: { banner, title, description, tags, content },
@@ -108,11 +110,15 @@ const PublishForm = () => {
     };
 
     axios
-      .post(`${import.meta.env.VITE_SERVER_DOMAIN}/create-blog`, blogObj, {
-        headers: {
-          Authorization: `Bearer ${jwtToken}`,
-        },
-      })
+      .post(
+        `${import.meta.env.VITE_SERVER_DOMAIN}/create-blog`,
+        { ...blogObj, id: blogId },
+        {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        }
+      )
       .then(() => {
         e.target.classList.remove("disable");
 

@@ -1,5 +1,5 @@
 import { useContext, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
 import axios from "axios";
 import EditorJS from "@editorjs/editorjs";
@@ -23,6 +23,8 @@ const BlogEditor = () => {
   const {
     userAuth: { jwtToken },
   } = useContext(UserContext);
+
+  const { blogId } = useParams();
 
   const navigate = useNavigate();
 
@@ -135,11 +137,15 @@ const BlogEditor = () => {
         };
 
         axios
-          .post(`${import.meta.env.VITE_SERVER_DOMAIN}/create-blog`, blogObj, {
-            headers: {
-              Authorization: `Bearer ${jwtToken}`,
-            },
-          })
+          .post(
+            `${import.meta.env.VITE_SERVER_DOMAIN}/create-blog`,
+            { ...blogObj, id: blogId },
+            {
+              headers: {
+                Authorization: `Bearer ${jwtToken}`,
+              },
+            }
+          )
           .then(() => {
             e.target.classList.remove("disable");
 
@@ -164,7 +170,7 @@ const BlogEditor = () => {
     setTextEditor(
       new EditorJS({
         holderId: "textEditor",
-        data: content,
+        data: Array.isArray(content) ? content[0] : content,
         tools,
         placeholder: "Let's write an awesome story",
       })

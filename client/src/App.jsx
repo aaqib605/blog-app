@@ -36,6 +36,7 @@ const App = () => {
           <Route path="*" element={<PageNotFound />} />
         </Route>
         <Route path="/editor" element={<Editor />} />
+        <Route path="/editor/:blogId" element={<Editor />} />
       </Routes>
     </UserContext.Provider>
   );
