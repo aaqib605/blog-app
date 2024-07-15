@@ -13,6 +13,7 @@ import serviceAccountKey from "./blog-app-firebase-adminsdk.json" with { type: "
 import User from "./schema/User.js";
 import Blog from "./schema/Blog.js";
 import Notification from "./schema/Notification.js";
+import Comment from "./schema/Comment.js";
 
 connectDB();
 
@@ -482,6 +483,62 @@ app.post("/liked-by-user", verifyJWT, async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.status(500).json({error: error.message});
+  }
+});
+
+app.post("/add-comment", verifyJWT, async (req, res) => {
+  const userId = req.user;
+  const {_id, comment, blogAuthor} = req.body;
+
+  if (!comment.length) {
+    return res.status(404).json({error: "Please enter something to leave a comment"});
+  }
+
+  const commentObj = new Comment({
+    blogId: _id, blogAuthor, comment, commentedBy: userId
+  });
+
+  try {
+    const commentDoc = await commentObj.save();
+    const {comment, commentedAt, children} = commentDoc;
+
+    const blog = await Blog.findOneAndUpdate(
+      { _id }, 
+      {$push: {"comments": commentDoc._id}, $inc: {"activity.totalComments": 1, "activity.totalParentComments": 1}, });
+
+    const notificationObj = new Notification({
+      type: "comment",
+      blog: _id,
+      notificationFor: blogAuthor,
+      user: userId,
+      comment: commentDoc._id
+    });
+
+    const notification = await notificationObj.save();
+
+    return res.status(200).json({
+      comment, commentedAt, _id: commentDoc._id, userId, children
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({error: "Error commenting on a blog"});
+  }
+});
+
+app.post("/get-blog-comments", async (req, res) => {
+  const {blogId, skipCount} = req.body;
+  const maxLimit = 5;
+
+  try {
+    const comments = await Comment.find({blogId, isReply: false})
+      .populate("commentedBy", "personalInfo.username personalInfo.fullname personalInfo.profileImg")
+      .skip(skipCount).limit(maxLimit)
+      .sort({"commentedAt": -1});
+
+    return res.status(200).json(comments);
+  } catch (error) {
+    console.log(err.message);
+    return res.status(500).json({error: err.message});
   }
 });
 
