@@ -42,7 +42,7 @@ const BlogPage = () => {
     publishedAt,
   } = blog;
 
-  const fetchBlog = async (req, res) => {
+  const fetchBlog = async () => {
     try {
       const {
         data: { blog },

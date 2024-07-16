@@ -4,7 +4,12 @@ import { UserContext } from "../App";
 import { BlogContext } from "../pages/blog.page";
 import axios from "axios";
 
-const CommentField = ({ action }) => {
+const CommentField = ({
+  action,
+  index = undefined,
+  replyingTo = undefined,
+  setIsReplying,
+}) => {
   const [comment, setComment] = useState("");
 
   const {
@@ -41,6 +46,7 @@ const CommentField = ({ action }) => {
           _id,
           blogAuthor,
           comment,
+          replyingTo,
         },
         {
           headers: {
@@ -55,11 +61,28 @@ const CommentField = ({ action }) => {
         personalInfo: { username, profileImg, fullname },
       };
 
-      data.childrenLevel = 0;
+      let newCommentArr;
 
-      const newCommentArr = [data, ...commentsArr];
+      if (replyingTo) {
+        commentsArr[index].children.push(data._id);
 
-      const parentCommentIncrementVal = 1;
+        data.childrenLevel = commentsArr[index].childrenLevel + 1;
+        data.parentIndex = index;
+
+        commentsArr[index].isReplyLoaded = true;
+
+        commentsArr.splice(index + 1, 0, data);
+
+        newCommentArr = commentsArr;
+
+        setIsReplying(false);
+      } else {
+        data.childrenLevel = 0;
+
+        newCommentArr = [data, ...commentsArr];
+      }
+
+      const parentCommentIncrementVal = replyingTo ? 0 : 1;
 
       setBlog({
         ...blog,

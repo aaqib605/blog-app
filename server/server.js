@@ -488,31 +488,54 @@ app.post("/liked-by-user", verifyJWT, async (req, res) => {
 
 app.post("/add-comment", verifyJWT, async (req, res) => {
   const userId = req.user;
-  const {_id, comment, blogAuthor} = req.body;
+  const { _id, comment, blogAuthor, replyingTo } = req.body;
 
   if (!comment.length) {
     return res.status(404).json({error: "Please enter something to leave a comment"});
   }
 
-  const commentObj = new Comment({
-    blogId: _id, blogAuthor, comment, commentedBy: userId
-  });
+  const commentObj = {
+    blogId: _id, 
+    blogAuthor, 
+    comment, 
+    commentedBy: userId
+  };
+
+  if (replyingTo) {
+    commentObj.parent = replyingTo;
+    commentObj.isReply = true;
+  }
 
   try {
-    const commentDoc = await commentObj.save();
+    const commentDoc = await new Comment(commentObj).save();
     const {comment, commentedAt, children} = commentDoc;
 
     const blog = await Blog.findOneAndUpdate(
       { _id }, 
-      {$push: {"comments": commentDoc._id}, $inc: {"activity.totalComments": 1, "activity.totalParentComments": 1}, });
+      {
+        $push: {"comments": commentDoc._id}, 
+        $inc: {"activity.totalComments": 1, "activity.totalParentComments": replyingTo ? 0 : 1}, 
+      }
+    );
 
     const notificationObj = new Notification({
-      type: "comment",
+      type: replyingTo ? "reply" : "comment",
       blog: _id,
       notificationFor: blogAuthor,
       user: userId,
       comment: commentDoc._id
     });
+
+    if (replyingTo) {
+      notificationObj.repliedOnComment = replyingTo;
+
+      const updatedCommentDoc = await Comment.findOneAndUpdate(
+        { _id: replyingTo }, 
+        { $push: {children: commentDoc._id} }
+      );
+
+      notificationObj.notificationFor = updatedCommentDoc.commentedBy;
+    }
 
     const notification = await notificationObj.save();
 
@@ -539,6 +562,33 @@ app.post("/get-blog-comments", async (req, res) => {
   } catch (error) {
     console.log(err.message);
     return res.status(500).json({error: err.message});
+  }
+});
+
+app.post("/get-replies", async (req, res) => {
+  const { _id, skip } = req.body;
+  const maxLimit = 5;
+
+  try {
+    const comment = await Comment.findOne({ _id })
+      .populate({
+        path: "children",
+        option: {
+          limit: maxLimit,
+          skip: skip,
+          sort: { "commentedAt": -1 }
+        },
+        populate: {
+          path: "commentedBy",
+          select: "personalInfo.profileImg personalInfo.fullname personalInfo.username"
+        },
+        select: "-blogId -updatedAt"
+      })
+      .select("children");
+
+    return res.status(200).json({replies: comment.children});
+  } catch (error) {
+    return res.status(500).json({error: error.message});
   }
 });
 
