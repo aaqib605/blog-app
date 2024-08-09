@@ -9,6 +9,7 @@ import PageNotFound from "./pages/404.page";
 import ProfilePage from "./pages/profile.page";
 import BlogPage from "./pages/blog.page";
 import { lookInSession } from "./common/session";
+import SideNav from "./components/sidenavbar.component";
 
 export const UserContext = createContext({});
 
@@ -28,6 +29,13 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Navbar />}>
           <Route index element={<HomePage />} />
+          <Route path="settings" element={<SideNav />}>
+            <Route path="edit-profile" element={<h1>Edit profile page</h1>} />
+            <Route
+              path="change-password"
+              element={<h1>Change password page</h1>}
+            />
+          </Route>
           <Route path="signin" element={<UserAuthForm type="Sign In" />} />
           <Route path="signup" element={<UserAuthForm type="Sign Up" />} />
           <Route path="search/:query" element={<SearchPage />} />
