@@ -11,7 +11,7 @@ const CommentCard = ({ index, leftVal, commentData }) => {
 
   const {
     commentedBy: {
-      personalInfo: { profileImg, fullname, username },
+      personalInfo: { profileImg, fullname, username: commentedByUsername },
     },
     commentedAt,
     comment,
@@ -20,16 +20,22 @@ const CommentCard = ({ index, leftVal, commentData }) => {
   } = commentData;
 
   const {
-    userAuth: { jwtToken },
+    userAuth: { jwtToken, username },
   } = useContext(UserContext);
 
   const {
     blog,
     blog: {
       comments,
+      activity,
+      activity: { totalParentComments },
       comments: { results: commentsArr },
+      author: {
+        personalInfo: { username: blogAuthor },
+      },
     },
     setBlog,
+    setTotalParentCommentsLoaded,
   } = useContext(BlogContext);
 
   const handleReply = () => {
@@ -40,7 +46,23 @@ const CommentCard = ({ index, leftVal, commentData }) => {
     setIsReplying((prevValue) => !prevValue);
   };
 
-  const removeCommentsCard = (startingPoint) => {
+  const getParentIndex = () => {
+    let startingPoint = index - 1;
+
+    try {
+      while (
+        commentsArr[startingPoint].childrenLevel >= commentData.childrenLevel
+      ) {
+        startingPoint--;
+      }
+    } catch {
+      startingPoint = undefined;
+    }
+
+    return startingPoint;
+  };
+
+  const removeCommentsCard = (startingPoint, isDelete = false) => {
     if (commentsArr[startingPoint]) {
       while (
         commentsArr[startingPoint].childrenLevel > commentData.childrenLevel
@@ -52,6 +74,38 @@ const CommentCard = ({ index, leftVal, commentData }) => {
         }
       }
     }
+
+    if (isDelete) {
+      const parentIndex = getParentIndex();
+
+      if (parentIndex !== undefined) {
+        commentsArr[parentIndex].children = commentsArr[
+          parentIndex
+        ].children.filter((child) => child !== _id);
+
+        if (!commentsArr[parentIndex].children.length) {
+          commentsArr[parentIndex].isReplyLoaded = false;
+        }
+      }
+
+      commentsArr.splice(index, 1);
+    }
+
+    if (commentData.childrenLevel === 0 && isDelete) {
+      setTotalParentCommentsLoaded((prevValue) => prevValue - 1);
+    }
+
+    setBlog({
+      ...blog,
+      comments: { results: commentsArr },
+      activity: {
+        ...activity,
+        totalParentComments:
+          totalParentComments - commentData.childrenLevel === 0 && isDelete
+            ? 1
+            : 0,
+      },
+    });
   };
 
   const handleHideReplies = () => {
@@ -89,6 +143,28 @@ const CommentCard = ({ index, leftVal, commentData }) => {
     }
   };
 
+  const handleDeleteComment = async (e) => {
+    e.target.setAttribute("disabled", true);
+
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_SERVER_DOMAIN}/delete-comment`,
+        { _id },
+        {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        }
+      );
+
+      e.target.removeAttribute("disabled");
+
+      removeCommentsCard(index + 1, true);
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+
   return (
     <div className="w-full" style={{ paddingLeft: `${leftVal * 10}px` }}>
       <div className="my-5 p-6 rounded-md border border-grey">
@@ -99,7 +175,7 @@ const CommentCard = ({ index, leftVal, commentData }) => {
             className="w-6 h-6 rounded-full"
           />
           <p className="line-clamp-1">
-            {fullname} @{username}
+            {fullname} @{commentedByUsername}
           </p>
           <p className="min-w-fit">{getDay(commentedAt)}</p>
         </div>
@@ -128,6 +204,17 @@ const CommentCard = ({ index, leftVal, commentData }) => {
           <button className="underline" onClick={handleReply}>
             Reply
           </button>
+
+          {username === commentedByUsername || username === blogAuthor ? (
+            <button
+              className="p-2 px-3 rounded-md border border-grey ml-auto hover:bg-red/30 hover:text-red flex items-center"
+              onClick={handleDeleteComment}
+            >
+              <i className="fi fi-rr-trash pointer-events-none"></i>
+            </button>
+          ) : (
+            ""
+          )}
         </div>
 
         {isReplying ? (

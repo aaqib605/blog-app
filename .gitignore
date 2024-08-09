@@ -1,6 +1,9 @@
-client/node_modules
-server/node_modules
-.DS_Store
 server/.env
-client/.env
+server/node_modules
 server/blog-app-firebase-adminsdk.json
+server/.DS_Store
+
+client/.env
+client/node_modules
+client/.DS_Store
+client/src/.DS_Store

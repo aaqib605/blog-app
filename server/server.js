@@ -324,15 +324,13 @@ app.post("/create-blog", verifyJWT, (req, res) => {
         .catch((err) => {
           return res
             .status(500)
-            .json({ error: "Failed to update total number of posts." });
+            .json({ error: "Failed to update total number of posts." }); 
         });
     })
     .catch((err) => {
       return res.status(500).json({ error: err.message });
     });
   }
-
-  
 });
 
 app.post("/search-blogs", async (req, res) => {
@@ -589,6 +587,58 @@ app.post("/get-replies", async (req, res) => {
     return res.status(200).json({replies: comment.children});
   } catch (error) {
     return res.status(500).json({error: error.message});
+  }
+});
+
+const deleteComments = async ( _id ) => {
+  try {
+    const deletedComment = await Comment.findOneAndDelete({ _id });
+
+    if (deletedComment.parent) {
+      const updatedComment = await Comment.findOneAndUpdate({ _id: deletedComment.parent }, { $pull: { children: _id}});
+    }
+
+    const deletedCommentNotification = await Notification.findOneAndDelete({ comment: _id });
+
+    const deletedReplyNotification = await Notification.findOneAndDelete({ reply: _id });
+
+    const updatedBlog = await Blog.findOneAndUpdate(
+        { _id: deletedComment.blogId }, 
+        { 
+          $pull: { comments: _id }, 
+          $inc: {
+            "activity.totalComments": -1, 
+            "activity.totalParentComments": deletedComment.parent ? 0 : -1
+          }
+        }
+    );
+
+    if (deletedComment.children.length) {
+      deletedComment.children.map(replies => deleteComments(replies));
+    } 
+
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({error: "Error deleting comment"});
+  }
+};
+
+app.post("/delete-comment", verifyJWT, async (req, res) => {
+  const userId = req.user;
+  const { _id } = req.body; 
+
+  
+
+  try {
+    const comment = await Comment.findOne({ _id });  
+  
+    if (userId === comment.commentedBy.toString() || userId === comment.blogAuthor.toStirng()) {
+      deleteComments(_id);
+  
+      return res.status(200).json({status: "done"});
+    }
+  } catch (error) {
+    return res.status(403).json({error: "You cannot delete this comment"});
   }
 });
 
