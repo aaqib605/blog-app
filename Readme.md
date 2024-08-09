@@ -50,6 +50,8 @@ AWS_SECRET_ACCESS_KEY = your AWS secret access key
 AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE = '1'
 ```
 
+Create a blog-app-firebase-adminsdk.json file in the server folder and add the firebase credentials.
+
 ## Install Dependencies (frontend & backend)
 
 ```

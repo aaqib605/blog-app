@@ -571,7 +571,7 @@ app.post("/get-replies", async (req, res) => {
     const comment = await Comment.findOne({ _id })
       .populate({
         path: "children",
-        option: {
+        options: {
           limit: maxLimit,
           skip: skip,
           sort: { "commentedAt": -1 }
@@ -626,8 +626,6 @@ const deleteComments = async ( _id ) => {
 app.post("/delete-comment", verifyJWT, async (req, res) => {
   const userId = req.user;
   const { _id } = req.body; 
-
-  
 
   try {
     const comment = await Comment.findOne({ _id });  
