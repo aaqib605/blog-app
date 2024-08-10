@@ -36,6 +36,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/;
+
 const generateUploadImageURL = async () => {
   const date = new Date();
   const imgName = `${nanoid()}-${date.getTime()}.jpeg}`;
@@ -198,6 +200,61 @@ app.post("/google-auth", async (req, res) => {
   }
 });
 
+app.post("/change-password", verifyJWT, async (req, res) => {
+  const _id = req.user;
+  const { currentPassword, newPassword } = req.body;
+
+  if (
+    !passwordRegex.test(currentPassword) ||
+    !passwordRegex.test(newPassword)
+  ) {
+    return res.status(403).json({
+      error:
+        "The password must be 6 to 20 characters in length and include a number, one lowercase letter, and one uppercase letter.",
+    });
+  }
+
+  try {
+    const user = await User.findOne({ _id });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    if (user.googleAuth) {
+      return res.status(403).json({
+        error:
+          "You can't change the account password since you logged in using Google.",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(
+      currentPassword,
+      user.personalInfo.password
+    );
+
+    if (!isMatch) {
+      return res.status(403).json({
+        error: "Incorrect current password. Please try again.",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await User.findOneAndUpdate(
+      { _id },
+      { "personalInfo.password": hashedPassword }
+    );
+
+    return res.status(200).json({ status: "Password changed." });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      error: "Error updating the password. Please try again.",
+    });
+  }
+});
+   
 app.get("/get-upload-image-url", async (req, res) => {
   try {
     const uploadImageURL = await generateUploadImageURL();
