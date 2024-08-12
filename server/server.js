@@ -265,6 +265,67 @@ app.get("/get-upload-image-url", async (req, res) => {
   }
 });
 
+app.post("/update-profile-img", verifyJWT, async (req, res) => {
+  const _id = req.user;
+  const { imgURL } = req.body;
+
+  try {
+    await User.findOneAndUpdate({ _id }, { "personalInfo.profileImg": imgURL });
+
+    return res.status(201).json({ "profileImg": imgURL });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/update-profile", verifyJWT, async (req, res) => {
+  const _id = req.user;
+  const { username, bio, socialLinks } = req.body;
+  const bioCharactersLimit = 150;
+
+  if (username.length < 3) {
+    return res.status(403).json({ error: "Username must be at least 3 characters long."});
+  }
+
+  if (bio.length > bioCharactersLimit) {
+    return res.status(403).json({ error: `Bio should not be more than ${bioCharactersLimit} characters long.`})
+  }
+
+  const socialLinksArr = Object.keys(socialLinks);
+
+  try {
+    for (const platform of socialLinksArr) {
+      if (socialLinks[platform].length) {
+        const hostname = new URL(socialLinks[platform]).hostname;
+
+        if (!hostname.includes(`${platform}.com`) && platform !== "website") {
+          return res.status(403).json({ error: `${platform} link is invalid.` });
+        }
+      }
+    }
+  } catch (error) {
+    return res.status(403).json({ error: "You must provide full social links with http(s) included." });
+  }
+
+  const updateObj = {
+    "personalInfo.username": username,
+    "personalInfo.bio": bio,
+    socialLinks
+  };
+
+  try {
+    await User.findOneAndUpdate({ _id }, updateObj, { runValidators: true });
+
+    return res.status(200).json({ username });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ error: "Username is already taken."});
+    }
+
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 app.post("/latest-blogs", async (req, res) => {
   const { page } = req.body;
   const maxLimit = 5;
