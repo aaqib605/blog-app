@@ -1,8 +1,9 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link, useNavigate, Outlet } from "react-router-dom";
 import logo from "../imgs/logo.png";
 import { UserContext } from "../App";
 import UserNavigationPanel from "./user-navigation.component";
+import axios from "axios";
 
 const Navbar = () => {
   const [searchBoxVisibility, setSearchBoxVisibility] = useState(false);
@@ -12,7 +13,8 @@ const Navbar = () => {
 
   const {
     userAuth,
-    userAuth: { jwtToken, profileImg },
+    userAuth: { jwtToken, profileImg, newNotificationAvailable },
+    setUserAuth,
   } = useContext(UserContext);
 
   const handleSearchInput = (e) => {
@@ -22,6 +24,29 @@ const Navbar = () => {
       navigate(`/search/${inputValue}`);
     }
   };
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        if (jwtToken) {
+          const { data } = await axios.get(
+            `${import.meta.env.VITE_SERVER_DOMAIN}/new-notification`,
+            {
+              headers: {
+                Authorization: `Bearer ${jwtToken}`,
+              },
+            }
+          );
+
+          setUserAuth({ ...userAuth, ...data });
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchNotifications();
+  }, [jwtToken]);
 
   return (
     <>
@@ -61,6 +86,11 @@ const Navbar = () => {
               <Link to="/dashboard/notification">
                 <button className="w-12 h-12 rounded-full bg-grey relative hover:bg-black/10 flex justify-center items-center">
                   <i className="fi fi-rr-bell text-xl"></i>
+                  {newNotificationAvailable ? (
+                    <span className="bg-red w-3 h-3 rounded-full absolute z-10 top-2 right-2"></span>
+                  ) : (
+                    ""
+                  )}
                 </button>
               </Link>
 

@@ -4,7 +4,7 @@ import { UserContext } from "../App";
 
 const SideNav = () => {
   const {
-    userAuth: { jwtToken },
+    userAuth: { jwtToken, newNotificationAvailable },
   } = useContext(UserContext);
 
   const currentPage = location.pathname.split("/")[2].replace("-", " ");
@@ -88,7 +88,14 @@ const SideNav = () => {
               onClick={(e) => setPageState(e.target.innerText)}
               className="sidebar-link"
             >
-              <i className="fi fi-rr-bell"></i>
+              <div className="relative">
+                <i className="fi fi-rr-bell"></i>
+                {newNotificationAvailable ? (
+                  <span className="bg-red w-2 h-2 rounded-full absolute z-10 top-0 right-0"></span>
+                ) : (
+                  ""
+                )}
+              </div>
               Notifications
             </NavLink>
 

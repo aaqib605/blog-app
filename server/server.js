@@ -758,4 +758,21 @@ app.post("/delete-comment", verifyJWT, async (req, res) => {
   }
 });
 
+app.get("/new-notification", verifyJWT, async (req, res) => {
+  const _id = req.user;
+
+  try {
+    const result = await Notification.exists({ notificationFor: _id , seen: false, user: { $ne: _id }});
+
+    if (result) {
+      return res.status(200).json({ newNotificationAvailable: true});
+    } else {
+      return res.status(200).json({ newNotificationAvailable: false });
+    }
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
