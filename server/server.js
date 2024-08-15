@@ -1,4 +1,4 @@
-import express from "express";
+import express, { response } from "express";
 import "dotenv/config";
 import bcrypt from "bcrypt";
 import { nanoid } from "nanoid";
@@ -604,7 +604,7 @@ app.post("/liked-by-user", verifyJWT, async (req, res) => {
 
 app.post("/add-comment", verifyJWT, async (req, res) => {
   const userId = req.user;
-  const { _id, comment, blogAuthor, replyingTo } = req.body;
+  const { _id, comment, blogAuthor, replyingTo, notificationId } = req.body;
 
   if (!comment.length) {
     return res.status(404).json({error: "Please enter something to leave a comment"});
@@ -649,6 +649,10 @@ app.post("/add-comment", verifyJWT, async (req, res) => {
         { _id: replyingTo }, 
         { $push: {children: commentDoc._id} }
       );
+
+      if (notificationId) {
+        await Notification.findOneAndUpdate({ _id: notificationId }, { reply: commentDoc._id });
+      }
 
       notificationObj.notificationFor = updatedCommentDoc.commentedBy;
     }
@@ -710,15 +714,21 @@ app.post("/get-replies", async (req, res) => {
 
 const deleteComments = async ( _id ) => {
   try {
-    const deletedComment = await Comment.findOneAndDelete({ _id });
+    const deletedComment = await Comment.findOneAndDelete({ _id }); 
 
     if (deletedComment.parent) {
-      const updatedComment = await Comment.findOneAndUpdate({ _id: deletedComment.parent }, { $pull: { children: _id}});
+      const updatedComment = await Comment.findOneAndUpdate(
+          { _id: deletedComment.parent }, 
+          { $pull: { children: _id }}
+      );
     }
 
     const deletedCommentNotification = await Notification.findOneAndDelete({ comment: _id });
 
-    const deletedReplyNotification = await Notification.findOneAndDelete({ reply: _id });
+    const deletedReplyNotification = await Notification.findOneAndUpdate(
+        { reply: _id }, 
+        { $unset: { reply: 1 }}
+    );
 
     const updatedBlog = await Blog.findOneAndUpdate(
         { _id: deletedComment.blogId }, 
@@ -743,18 +753,19 @@ const deleteComments = async ( _id ) => {
 
 app.post("/delete-comment", verifyJWT, async (req, res) => {
   const userId = req.user;
-  const { _id } = req.body; 
+  const { _id } = req.body;  
 
   try {
-    const comment = await Comment.findOne({ _id });  
+    const comment = await Comment.findOne({ _id });   
   
-    if (userId === comment.commentedBy.toString() || userId === comment.blogAuthor.toStirng()) {
-      deleteComments(_id);
+    if (userId === comment.commentedBy.toString() || userId === comment.blogAuthor.toString()) {
+      deleteComments( _id );
   
-      return res.status(200).json({status: "done"});
-    }
+      return res.status(200).json({ status: "done" });
+    } 
+
   } catch (error) {
-    return res.status(403).json({error: "You cannot delete this comment"});
+    return res.status(403).json({ error: "You cannot delete this comment" });
   }
 });
 
@@ -775,4 +786,77 @@ app.get("/new-notification", verifyJWT, async (req, res) => {
   }
 });
 
+app.post("/notifications", verifyJWT, async (req, res) => {
+  const _id = req.user;
+
+  const { page, filter, deletedDocCount } = req.body;
+  const maxLimit = 10;
+  
+  const findQuery = { notificationFor: _id, user: { $ne: _id }};
+  const skipDocs = (page - 1) * maxLimit;
+
+  if (filter !== "all") {
+    findQuery.type = filter;
+  }
+
+  if (deletedDocCount) {
+    skipDocs -= deletedDocCount;
+  }
+
+  try {
+    const notifications = await Notification.find(findQuery)
+      .skip(skipDocs)
+      .limit(maxLimit)
+      .populate("blog", "title blogId")
+      .populate("user", "personalInfo.fullname personalInfo.username personalInfo.profileImg")
+      .populate("comment", "comment")
+      .populate("repliedOnComment", "comment")
+      .populate("reply", "comment")
+      .sort({ createdAt: -1 })
+      .select("createdAt type seen reply");
+
+    await Notification.updateMany(findQuery, { seen: true })
+      .skip(skipDocs)
+      .limit(maxLimit);
+
+    return res.status(200).json({ notifications });
+
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/all-notifications-count", verifyJWT, async (req, res) => {
+  const _id = req.user;
+  const { filter } = req.body;
+  
+  const findQuery = { notificationFor: _id, user: { $ne: _id }};
+
+  if (filter !== "all") {
+    findQuery.type = filter;
+  }
+
+  try {
+    const notificationsCount = await Notification.countDocuments(findQuery);
+
+    return res.status(200).json({ totalDocs: notificationsCount });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+
+
+
+
+
+
+
+
+
+
+
+
+

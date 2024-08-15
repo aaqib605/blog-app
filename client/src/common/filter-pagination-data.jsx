@@ -7,8 +7,17 @@ export const filterPaginationData = async ({
   page,
   countRoute,
   dataToSend = {},
+  user = undefined,
 }) => {
   let obj;
+
+  const headers = {};
+
+  if (user) {
+    headers.headers = {
+      Authorization: `Bearer ${user}`,
+    };
+  }
 
   try {
     if (existingBlogs !== null && !createNewArr) {
@@ -22,7 +31,8 @@ export const filterPaginationData = async ({
         data: { totalDocs },
       } = await axios.post(
         `${import.meta.env.VITE_SERVER_DOMAIN}/${countRoute}`,
-        dataToSend
+        dataToSend,
+        headers
       );
 
       obj = { results: newFetchedBlogs, page: 1, totalDocs };
@@ -30,7 +40,7 @@ export const filterPaginationData = async ({
 
     return obj;
   } catch (error) {
-    console.log(err);
+    console.log(error);
   }
 };
 
